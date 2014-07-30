@@ -127,7 +127,7 @@ def void_pdf(r,norm,cosm,vd,func,V,max_record=True):
 void_pdf_vec = np.vectorize(void_pdf)
 
 
-def void_survey_fr(logr,norm,cosm,vd,fsky,z_min,z_max):
+def void_survey_fr(logr,norm,cosm,func,fsky,z_min,z_max):
   """ Original void distribution probability density function (pdf)
   in a given cosmological survey between min and max redshift values
 
@@ -153,43 +153,49 @@ def void_survey_fr(logr,norm,cosm,vd,fsky,z_min,z_max):
   for a given survey (between mass and redshift limits)
   """
 
-  def dndlnrdvdz(z,logr,cosm):
+  def dndlnrdvdz(z,logr,cosm,func):
     cosm.growth(z)
-    return vd.void_radii_dist(logr,cosm) * (1/exp(logr)) * cosm.dvdz(z)
+    return func(logr,cosm) * cosm.dvdz(z)
 
-  integ = integrate.quad(dndlnrdvdz,z_min,z_max,args=(logr,cosm))[0]
+  integ = integrate.quad(dndlnrdvdz,z_min,z_max,args=(logr,cosm,func))[0]
 
   return (fsky/norm)*integ
 
-def void_survey_Fr(logr,norm,cosm,vd,fsky,z_min,z_max,log_r_min):
+def void_survey_Fr(logr,norm,cosm,func,fsky,z_min,z_max,log_r_min):
 
   # integral function
-  def dndlnrdvdz(rad,z,cosm,vd):
+  def dndlnrdvdz(rad,z,cosm,func):
     cosm.growth(z)
-    return vd.void_radii_dist(rad,cosm) * (1/exp(logr)) * cosm.dvdz(z)
+    return func(rad,cosm) * cosm.dvdz(z)
 
   #logr = np.linspace(log(r_min),log(r_max),r_steps)
 
-  integ = integrate.dblquad(dndlnrdvdz, z_min, z_max, lambda rad: log_r_min, lambda rad: logr, args=(cosm,vd))[0]
+  integ = integrate.dblquad(dndlnrdvdz, z_min, z_max, lambda rad: log_r_min, lambda rad: logr, args=(cosm,func))[0]
 
   # return F(r) values along with corresponding logr
   return (fsky/norm)*integ
 
 
-def void_survey_norm(cosm,vd,fsky=0.3,z_min=0.0,z_max=0.05,log_r_min=log(0.0001),log_r_max=log(70)):
+def void_survey_norm(cosm,func,z_min=0.0,z_max=0.05,volume=1.9*(10**6),log_r_min=log(0.1),log_r_max=log(200)):
+  fsky = volume / cosm.V_between(z_min,z_max)
+  print fsky
+
   #integral function
-  def dndlnrdvdz(logr,z,cosm,vd):
+  def dndlnrdvdz(logr,z,cosm,func):
      cosm.growth(z)
-     return vd.void_radii_dist(logr,cosm) * (1/exp(logr)) * cosm.dvdz(z)
+     return func(logr,cosm) * cosm.dvdz(z)
 
   integ = integrate.dblquad(dndlnrdvdz, z_min, z_max,
-                            lambda r: log_r_min, lambda r: log_r_max, args=(cosm,vd))[0]
+                            lambda r: log_r_min, lambda r: log_r_max, args=(cosm,func))[0]
 
   return fsky*integ
 
-def void_survey_pdf(r,N,cosm,vd,fsky=0.3,z_min=0.0,z_max=0.05,log_r_min=log(0.0001)):
-  fr = void_survey_fr(log(r),N,cosm,vd,fsky,z_min,z_max)
-  Fr = void_survey_Fr(log(r),N,cosm,vd,fsky,z_min,z_max,log_r_min)
+def void_survey_pdf(r,N,cosm,func,z_min=0.0,z_max=0.05,volume=1.9*(10**6),log_r_min=log(0.1)):
+  fsky = volume / cosm.V_between(z_min,z_max)
+  print fsky
+
+  fr = void_survey_fr(log(r),N,cosm,func,fsky,z_min,z_max)
+  Fr = void_survey_Fr(log(r),N,cosm,func,fsky,z_min,z_max,log_r_min)
 
   phi = N * fr * Fr**(int(N-1.))
   #logphi = log(N) + log(fr) + ((N-1.)*log(Fr))
@@ -197,7 +203,7 @@ def void_survey_pdf(r,N,cosm,vd,fsky=0.3,z_min=0.0,z_max=0.05,log_r_min=log(0.00
   print r, fr, Fr, N, phi
   #print log(N), log(fr), ((N-1.)*log(Fr))
 
-  return phi
+  return fr, Fr, phi
 
 void_survey_pdf_vec = np.vectorize(void_survey_pdf)
 

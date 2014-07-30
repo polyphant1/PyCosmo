@@ -81,7 +81,6 @@ class Void:
     * exp((-1*fabs(self.void_barrier)*(D**2) \
     / (fabs(self.collapse_barrier)*nu*4)) - (2*(D**4)/(nu**2)))
 
-
   multiplicity_function_svdw_vec = np.vectorize(multiplicity_function_svdw)
 
   def multiplicity_function_jlh(self,sigma,D):
@@ -220,20 +219,19 @@ class Void:
     equation [12], Jennings, Li & Hu
     """
 
-    # account for expansion factor (eq.12, Jennings,Li & Hu)
-    logr_l = log(exp(logr) / 1.7)
+    logr_l = log(exp(logr)/1.7)
 
     # D ; the void-and-cloud parameter
     D = self.void_and_cloud()
 
     # calculate volume from a given R
-    V = (4. * pi * pow(exp(logr),3)) / 3.
+    V = (4. * pi * pow(exp(logr_l),3)) / 3.
 
     # get sigma from PowSpec class fit
     sigma = cosm.sig_fit_z(logr)
 
     # get dln(1/sigma) / dln(r)
-    dlns_dlnr = fabs(cosm.dlnsigmadlnr(logr_l))
+    dlns_dlnr = fabs(log(cosm.Dplus/cosm.growth(0.)) + cosm.dlnsigmadlnr(logr_l))
 
     # calculate f(sigma)
     if(np.isscalar(sigma)):
@@ -245,7 +243,7 @@ class Void:
 
     return no_dens
 
-  def void_radii_dist_pls(self,r,cosm):
+  def void_radii_dist_pls(self,logr,cosm):
     """ Number density wrt void radii, Paranjape, Lam & Sheth 2011
 
     Parameters
@@ -271,20 +269,19 @@ class Void:
     Based on Jennings, Li & Hu (2013 MNRAS 000 1) equation [12]
     """
 
-    # account for expansion factor (eq.12, Jennings,Li & Hu)
-    r = (r / 1.7)
+    logr_l = log(exp(logr)/1.7)
 
     # D ; the void-and-cloud parameter
     D = self.void_and_cloud()
 
     # calculate volume from a given R
-    V = (4. * pi * pow(r,3)) / 3.
+    V = (4. * pi * pow(exp(logr_l),3)) / 3.
 
     # get sigma from PowSpec class fit
-    sigma = cosm.Dplus * cosm.sig_fit(log(r*1.7))
+    sigma = cosm.Dplus * cosm.sig_fit(logr)
 
     # get dln(1/sigma) / dln(r)
-    dlns_dlnr = fabs(cosm.dlnsigmadlnr(log(r)))
+    dlns_dlnr = fabs(log(cosm.Dplus/cosm.growth(0.)) + cosm.dlnsigmadlnr(logr_l))
 
     # calculate f(sigma)
     if(np.isscalar(sigma)):
@@ -296,7 +293,7 @@ class Void:
 
     return no_dens
 
-  def void_radii_dist_linear(self,r,cosm):
+  def void_radii_dist_linear(self,logr,cosm):
     """ Number density wrt void radii in the
         linear domain, Jennings, Li & Hu (2013 MNRAS 000 1)
 
@@ -322,17 +319,19 @@ class Void:
     (equation [10] Jennings,Li & Hu)
     """
 
+    logr_l = log(exp(logr)/1.7)
+
     # D ; the void-and-cloud parameter
     D = self.void_and_cloud()
 
     # calculate volume from a given R
-    V = (4. * pi * pow(r,3)) / 3.
+    V = (4. * pi * pow(exp(logr_l),3)) / 3.
 
     # get sigma from PowSpec class fit
     sigma = cosm.sig_fit(log(r))
 
     # get dln(1/sigma) / dln(r)
-    dlns_dlnr = fabs(cosm.dlnsigmadlnr(log(r)))
+    dlns_dlnr = fabs(log(cosm.Dplus/cosm.growth(0.)) + cosm.dlnsigmadlnr(logr_l))
 
     # calculate f(sigma)
     if(np.isscalar(sigma)):
@@ -345,21 +344,23 @@ class Void:
     return no_dens
 
 
-  def void_radii_dist_vdn(self,r,cosm):
+  def void_radii_dist_vdn(self,logr,cosm):
     """ Volume conserving model for void radii
     relative abundances, Jennings, Li & Hu 2013 """
+
+    logr_l = log(exp(logr)/1.7)
 
     # D ; the void-and-cloud parameter
     D = self.void_and_cloud()
 
     # calculate volume from a given R
-    V = (4. * pi * pow(r,3)) / 3.
+    V = (4. * pi * pow(exp(logr),3)) / 3.
 
     # get sigma from PowSpec class fit
-    sigma = cosm.Dplus * cosm.sig_fit(log(r))
+    sigma = cosm.Dplus * cosm.sig_fit(logr)
 
     # get dln(1/sigma) / dln(r)
-    dlns_dlnr = fabs(cosm.dlnsigmadlnr(log(r/1.7)))
+    dlns_dlnr = fabs(log(cosm.Dplus/cosm.growth(0.)) + cosm.dlnsigmadlnr(logr_l))
 
     # calculate f(sigma)
     if(np.isscalar(sigma)):
@@ -371,24 +372,26 @@ class Void:
 
     return no_dens
 
-  def void_radii_dist_vdn_pls(self,r,cosm):
+  def void_radii_dist_vdn_pls(self,logr,cosm):
     """ Volume conserving model for void radii
     relative abundances, Jennings, Li & Hu 2013
 
     Uses the correlated steps approach multiplicity
     function (Paranjape et al. 2012) """
 
+    logr_l = log(exp(logr)/1.7)
+
     # D ; the void-and-cloud parameter
     D = self.void_and_cloud()
 
     # calculate volume from a given R
-    V = (4. * pi * pow(r,3)) / 3.
+    V = (4. * pi * pow(exp(logr),3)) / 3.
 
     # get sigma from PowSpec class fit
-    sigma = cosm.Dplus * cosm.sig_fit(log(r))
+    sigma = cosm.Dplus * cosm.sig_fit(logr)
 
     # get dln(1/sigma) / dln(r)
-    dlns_dlnr = fabs(cosm.dlnsigmadlnr(log(r/1.7)))
+    dlns_dlnr = fabs(log(cosm.Dplus/cosm.growth(0.)) + cosm.dlnsigmadlnr(logr_l))
 
     # calculate f(sigma)
     if(np.isscalar(sigma)):
@@ -400,40 +403,40 @@ class Void:
 
     return no_dens
 
-  def void_radii_dist_ps(self,r,cosm):
+  def void_radii_dist_ps(self,logr,cosm):
     """ void abundance wrt radius from press schechter formalism
         (as defined in Kamionkowski, Verde & Jimenez (2008), equation [4])
     """
     rho = cosm.rho_m(0.0)
 
-    m = (4 * pi * rho * r**3)/3
+    m = (4 * pi * rho * exp(logr)**3)/3
 
-    sigma = cosm.Dplus * cosm.sig_fit(log(r))
+    sigma = cosm.Dplus * cosm.sig_fit(logr)
 
-    dlns_dlnm = fabs(cosm.dlnsigmadlnm(log(m)))
+    dlns_dlnm = fabs(log(cosm.Dplus/cosm.growth(0.)) + cosm.dlnsigmadlnm(log(m)))
 
-    n = (9/(2*pi**2)) * ((pi/2)**0.5) * (1/r**4) * (abs(self.void_barrier)/sigma) \
+    n = (9/(2*pi**2)) * ((pi/2)**0.5) * (1/(exp(logr))**4) * (abs(self.void_barrier)/sigma) \
      * abs(dlns_dlnm) * exp(-1*(self.void_barrier**2/(2*sigma**2)))
 
     return n
 
-  def void_radii_dist_ps_ng(self,r,S3,cosm):
+  def void_radii_dist_ps_ng(self,logr,S3,cosm):
     """ void abundance wrt radius from press schechter formalism with Non-Gaussian IC's
         (as defined in Kamionkowski, Verde & Jimenez (2008), equation [6])
     """
 
     rho = cosm.rho_m(0.0)
 
-    m = (4 * pi * rho * r**3)/3
+    m = (4 * pi * rho * exp(logr)**3)/3
 
     # differential skewness wrt mass
     dS3dm = self.ds3_dm_fit(m)
 
-    sigma = cosm.Dplus * cosm.sig_fit(log(r))
+    sigma = cosm.Dplus * cosm.sig_fit(logr)
 
-    dlns_dlnm = fabs(cosm.dlnsigmadlnm(log(m)))
+    dlns_dlnm = fabs(log(cosm.Dplus/cosm.growth(0.)) + cosm.dlnsigmadlnm(log(m)))
 
-    a = (9/(2*pi**2)) * ((pi/2)**0.5) * (1/r**4) * exp(-1*(self.void_barrier**2/(2*sigma**2)))
+    a = (9/(2*pi**2)) * ((pi/2)**0.5) * (1/(exp(logr))**4) * exp(-1*(self.void_barrier**2/(2*sigma**2)))
     b = (abs(self.void_barrier)/sigma) - ((S3*sigma)/6)*( ((self.void_barrier/sigma)**4) \
     - 2*((self.void_barrier/sigma)**2) - 1 )
     c = (1/6)*dS3dm*sigma*(((self.void_barrier/sigma)**2)-1)
@@ -465,17 +468,20 @@ class Void:
 
     return self.ds3_dm_fit
 
-  def cumulative_V_R(self,r,cosm,func):
+  def cumulative_V_R(self,logr,cosm,func):
     """ cumulative fration of volume contained within voids
     from Jennings, Li & Hu, 2013 """
 
-    def cumulative_int(r,cosm,func):
+    def cumulative_int(logr,cosm,func):
       # integral function argument
-      n = func(r,cosm)
-      V = (4 * pi * r**3) / 3
-      return n * V * (1/r)
+      n = func(logr,cosm)
+      V = (4 * pi * exp(logr)**3) / 3
+      ##############################################################################################
+      """multiply by (1/r) ????????????????????????????????"""
+      ###############################################################################################
+      return n * V #* (1/r)
 
-    return integrate.quad(cumulative_int,r,100.,args=(cosm,func))[0]
+    return integrate.quad(cumulative_int,logr,100.,args=(cosm,func))[0]
 
   cumulative_V_R_vec = np.vectorize(cumulative_V_R)
 
@@ -888,16 +894,15 @@ if __name__ == '__main__':
 
   """
 
-  """
-  r_mass = (4*pi*cosm.rho_m(0.)*radius**3)/3.
+  #r_mass = (4*pi*cosm.rho_m(0.)*radius**3)/3.
 
   # calculate the skewness for given set of radii
-  s3 = []
-  cosm.fnl = 200.
-  s3 = (vd.skewness_S3_vec(vd,radius,cosm))
+  #s3 = []
+  #cosm.fnl = 200.
+  #s3 = (vd.skewness_S3_vec(vd,radius,cosm))
 
   # differential swekness wrt mass
-  vd.ds3dm(r_mass,s3)
+  #vd.ds3dm(r_mass,s3)
 
   #ps_ng_nr = vd.void_radii_dist_ps_ng(radius,s3,cosm)
   #cumul_NG = vd.cumulative_V_R_NG_vec(vd,radius,cosm,vd.void_radii_dist_ps_ng)
@@ -905,38 +910,38 @@ if __name__ == '__main__':
 
 
   # calculate the number density of voids wrt radius
-  #no_rad = vd.void_radii_dist(radius,cosm)
-  #no_rad_pls = vd.void_radii_dist_pls(radius,cosm)
-  #no_radius = vd.void_radii_dist_vdn(radius,cosm)
-  #no_radius2 = vd.void_radii_dist_vdn_pls(radius,cosm)
-  #ps_nr = vd.void_radii_dist_ps(radius,cosm)
-
+  #no_rad = vd.void_radii_dist(log(radius),cosm)
+  #no_rad_pls = vd.void_radii_dist_pls(log(radius),cosm)
+  #no_radius = vd.void_radii_dist_vdn(log(radius),cosm)
+  #no_radius2 = vd.void_radii_dist_vdn_pls(log(radius),cosm)
+  #ps_nr = vd.void_radii_dist_ps(log(radius),cosm)
 
   # caculate the cumulative volume fraction in voids with radius r
-  cumul = vd.cumulative_V_R_vec(vd,radius,cosm,vd.void_radii_dist)
-  cumul2 = vd.cumulative_V_R_vec(vd,radius,cosm,vd.void_radii_dist_pls)
-  cumul3 = vd.cumulative_V_R_vec(vd,radius,cosm,vd.void_radii_dist_vdn)
-  cumul4 = vd.cumulative_V_R_vec(vd,radius,cosm,vd.void_radii_dist_vdn_pls)
-  cumul5 = vd.cumulative_V_R_vec(vd,radius,cosm,vd.void_radii_dist_ps)
+  #cumul = vd.cumulative_V_R_vec(vd,log(radius),cosm,vd.void_radii_dist)
+  #cumul2 = vd.cumulative_V_R_vec(vd,log(radius),cosm,vd.void_radii_dist_pls)
+  #cumul3 = vd.cumulative_V_R_vec(vd,log(radius),cosm,vd.void_radii_dist_vdn)
+  #cumul4 = vd.cumulative_V_R_vec(vd,log(radius),cosm,vd.void_radii_dist_vdn_pls)
+  #cumul5 = vd.cumulative_V_R_vec(vd,log(radius),cosm,vd.void_radii_dist_ps)
 
-  #plt.loglog(radius,no_rad,radius,no_rad_pls,radius,no_radius,radius,no_radius2,radius,ps_nr,radius,ps_ng_nr)
-  plt.semilogx(radius,cumul,radius,cumul2,radius,cumul3,radius,cumul4,radius,cumul5)
-  plt.legend(["SVDW","PLS","JLH","JLH-PLS","PS"])
+  #plt.loglog(radius,no_rad,radius,no_radius,radius,ps_nr)
+  #plt.semilogx(radius,cumul,radius,cumul3,radius,cumul5)
+  plt.legend(["SVDW","VDN","PS","JLH-PLS","PS"])
 
   #plt.xlim([1e-1,5e1])
   #plt.ylim([1e-10,1e-0])
 
-  plt.ylim(0.,2.)
+  plt.ylim(10**-7,1.)
   plt.xlim(1e-1,5e1)
 
+  plt.title("Void Radii Distribution")
 
   plt.xlabel(r'r [Mpc/h]', fontsize='15')
-  #plt.ylabel(r'dn/dlnr $(h/Mpc)^{3}$', fontsize='15')
-  plt.ylabel(r"F(R)",fontsize='15')
+  plt.ylabel(r'dn/dlnr $(h/Mpc)^{3}$', fontsize='15')
+  #plt.ylabel(r"F(R)",fontsize='15')
 
-  plt.show()
+  #plt.show()
 
-  """
+
 
 
   """
